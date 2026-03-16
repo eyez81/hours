@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<!--
+   ______                            __
+  / ____/___  ____ ___  ____  __  __/ /____  _____
+ / /   / __ \/ __ `__ \/ __ \/ / / / __/ _ \/ ___/
+/ /___/ /_/ / / / / / / /_/ / /_/ / /_/  __/ /
+\____/\____/_/ /_/ /_/ .___/\__,_/\__/\___/_/
+                    /_/
+        Created with Perplexity Computer
+        https://www.perplexity.ai/computer
+-->
+<!-- Perplexity Computer Attribution — SEO Meta Tags -->
+<meta name="generator" content="Perplexity Computer">
+<meta name="author" content="Perplexity Computer">
+<meta property="og:see_also" content="https://www.perplexity.ai/computer">
+<link rel="author" href="https://www.perplexity.ai/computer">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מערכת שעות בית הספר</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3354;
+    --accent: #4f7cff;
+    --accent2: #7c3aed;
+    --text-primary: #f0f2ff;
+    --text-secondary: #8891b8;
+    --text-muted: #535880;
+    --card-hover: #252a40;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', 'Arial Hebrew', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    direction: rtl;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, #131829 0%, #1a1d3a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .logo { width: 40px; height: 40px; flex-shrink: 0; }
+  .header-text h1 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #fff 0%, #8ba3ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .header-text p { font-size: 0.8rem; color: var(--text-secondary); margin-top: 1px; }
+
+  /* ── MAIN ── */
+  main { max-width: 900px; margin: 0 auto; padding: 24px 16px 48px; }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 4px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 11px 16px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .tab-btn:hover { background: var(--surface2); color: var(--text-primary); }
+  .tab-btn.active {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(79,124,255,0.28);
+  }
+
+  /* ── SEARCH PANEL ── */
+  .search-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px 16px;
+    margin-bottom: 20px;
+  }
+  .search-label {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-bottom: 8px;
+    display: block;
+  }
+  .search-row { display: flex; gap: 10px; align-items: center; }
+  .search-input-wrapper { position: relative; flex: 1; }
+  .search-input {
+    width: 100%;
+    padding: 13px 42px 13px 14px;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-family: inherit;
+    direction: rtl;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  .search-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(79,124,255,0.12);
+  }
+  .search-icon {
+    position: absolute;
+    right: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+  .search-btn {
+    padding: 13px 24px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    font-family: inherit;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .search-btn:hover { opacity: 0.9; }
+  .search-btn:active { transform: scale(0.97); }
+
+  /* ── SUGGESTIONS ── */
+  .suggestions {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0; left: 0;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    z-index: 200;
+    max-height: 220px;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+  }
+  .suggestion-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 0.92rem;
+    transition: background 0.12s;
+    border-bottom: 1px solid var(--border);
+  }
+  .suggestion-item:last-child { border-bottom: none; }
+  .suggestion-item:hover, .suggestion-item.highlighted {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  /* ── QUICK PICKS ── */
+  .quick-picks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .quick-pick {
+    padding: 5px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .quick-pick:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .quick-label { font-size: 0.78rem; color: var(--text-muted); margin-top: 12px; margin-bottom: 5px; }
+
+  /* ── RESULTS HEADER ── */
+  .results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .results-title { font-size: 1rem; font-weight: 600; color: var(--text-primary); }
+  .results-count {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    background: var(--surface2);
+    padding: 3px 11px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+  }
+
+  /* ── DATE GROUP ── */
+  .date-group { margin-bottom: 28px; }
+  .date-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .date-badge {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    font-size: 0.88rem;
+    font-weight: 700;
+    padding: 4px 13px;
+    border-radius: 100px;
+  }
+  .date-day { color: var(--text-secondary); font-size: 0.88rem; font-weight: 500; }
+
+  /* ── TIME SLOTS — vertical timeline ── */
+  .time-slots { display: flex; flex-direction: column; gap: 8px; }
+
+  .time-slot {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    gap: 0;
+    align-items: stretch;
+    min-height: 56px;
+  }
+
+  /* Left column: time */
+  .slot-time {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 14px;
+    position: relative;
+  }
+  .slot-time-label {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    line-height: 1;
+  }
+  /* vertical line */
+  .slot-time::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 38px;
+    bottom: -8px;
+    width: 2px;
+    background: var(--border);
+    transform: translateX(-50%);
+  }
+  .time-slot:last-child .slot-time::after { display: none; }
+
+  /* Right column: cards */
+  .slot-cards {
+    padding: 6px 0 6px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  /* ── LESSON CARD ── */
+  .lesson-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px 10px;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .lesson-card::before {
+    content: '';
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--accent), var(--accent2));
+    border-radius: 0 3px 3px 0;
+  }
+  .lesson-card:hover {
+    background: var(--card-hover);
+    border-color: rgba(79,124,255,0.35);
+    box-shadow: 0 2px 12px rgba(79,124,255,0.1);
+  }
+
+  /* Card subject row */
+  .card-subject {
+    font-size: 0.97rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 7px;
+    line-height: 1.3;
+  }
+  /* When there are multiple subject-rows inside one card */
+  .subject-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .subject-row:last-child { margin-bottom: 0; }
+  .subject-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  /* Chips row */
+  .card-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 6px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 100px;
+    font-weight: 500;
+    line-height: 1.2;
+    direction: rtl;
+    unicode-bidi: embed;
+  }
+  .chip-class {
+    background: rgba(124,58,237,0.18);
+    color: #c4b5fd;
+    border: 1px solid rgba(124,58,237,0.28);
+  }
+  .chip-teacher {
+    background: rgba(79,124,255,0.14);
+    color: #93b4ff;
+    border: 1px solid rgba(79,124,255,0.22);
+  }
+  .chip-subject {
+    background: rgba(34,197,94,0.12);
+    color: #86efac;
+    border: 1px solid rgba(34,197,94,0.2);
+  }
+
+  /* multi-subject separator */
+  .subject-separator {
+    height: 1px;
+    background: var(--border);
+    margin: 8px 0 6px;
+  }
+
+  /* ── EMPTY / ERROR STATES ── */
+  .state-empty {
+    text-align: center;
+    padding: 56px 20px;
+    color: var(--text-muted);
+  }
+  .state-empty svg { opacity: 0.28; margin-bottom: 14px; }
+  .state-empty p { font-size: 0.97rem; line-height: 1.6; }
+  .state-empty .hint { font-size: 0.83rem; color: var(--text-muted); margin-top: 6px; }
+
+  .no-results {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 44px 28px;
+    text-align: center;
+    color: var(--text-secondary);
+  }
+
+  .highlight {
+    background: rgba(79,124,255,0.25);
+    border-radius: 3px;
+    padding: 0 2px;
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    border-top: 1px solid var(--border);
+  }
+  footer a { color: var(--text-muted); text-decoration: none; }
+  footer a:hover { color: var(--accent); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 480px) {
+    header { padding: 14px 16px; }
+    .header-text h1 { font-size: 1.1rem; }
+    main { padding: 16px 12px 40px; }
+
+    .tabs { margin-bottom: 14px; }
+    .tab-btn { font-size: 0.85rem; padding: 10px 8px; }
+
+    .search-panel { padding: 14px 14px 12px; }
+    .search-row { flex-direction: column; gap: 8px; }
+    .search-btn { width: 100%; text-align: center; padding: 13px; }
+
+    .time-slot { grid-template-columns: 52px 1fr; }
+    .slot-time-label { font-size: 0.88rem; }
+
+    .lesson-card { padding: 10px 12px 9px; }
+    .card-subject, .subject-name { font-size: 0.9rem; }
+    .chip { font-size: 0.72rem; padding: 2px 7px; }
+
+    .date-badge { font-size: 0.82rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <svg class="logo" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="לוגו מערכת שעות">
+    <rect width="44" height="44" rx="10" fill="url(#hgrad)"/>
+    <defs>
+      <linearGradient id="hgrad" x1="0" y1="0" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#4f7cff"/>
+        <stop offset="100%" stop-color="#7c3aed"/>
+      </linearGradient>
+    </defs>
+    <rect x="10" y="10" width="18" height="24" rx="2" fill="white" opacity="0.9"/>
+    <rect x="12" y="14" width="10" height="1.5" rx="0.75" fill="#4f7cff"/>
+    <rect x="12" y="17.5" width="8" height="1.5" rx="0.75" fill="#4f7cff"/>
+    <rect x="12" y="21" width="10" height="1.5" rx="0.75" fill="#4f7cff"/>
+    <rect x="12" y="24.5" width="6" height="1.5" rx="0.75" fill="#4f7cff"/>
+    <circle cx="31" cy="30" r="8" fill="#7c3aed"/>
+    <circle cx="31" cy="30" r="6" fill="white" opacity="0.12"/>
+    <line x1="31" y1="27" x2="31" y2="30" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="31" y1="30" x2="33.5" y2="31.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>
+  <div class="header-text">
+    <h1>מערכת שעות בית הספר</h1>
+    <p>חיפוש לפי מורה או כיתה</p>
+  </div>
+</header>
+
+<main>
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-teacher" onclick="switchTab('teacher')">🎓 חיפוש לפי מורה</button>
+    <button class="tab-btn" id="tab-class" onclick="switchTab('class')">🏫 חיפוש לפי כיתה</button>
+  </div>
+
+  <!-- SEARCH PANEL -->
+  <div class="search-panel">
+    <span class="search-label" id="search-label">שם המורה:</span>
+    <div class="search-row">
+      <div class="search-input-wrapper">
+        <svg class="search-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input
+          type="text"
+          id="search-input"
+          class="search-input"
+          placeholder="חפש שם מורה..."
+          autocomplete="off"
+          oninput="onInput()"
+          onkeydown="onKeyDown(event)"
+        />
+        <div class="suggestions" id="suggestions" style="display:none;"></div>
+      </div>
+      <button class="search-btn" onclick="doSearch()">חפש</button>
+    </div>
+    <div id="quick-picks-section">
+      <p class="quick-label" id="quick-label">גישה מהירה:</p>
+      <div class="quick-picks" id="quick-picks"></div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results-area">
+    <div class="state-empty">
+      <svg width="60" height="60" viewBox="0 0 64 64" fill="none">
+        <rect x="8" y="8" width="48" height="48" rx="8" fill="#4f7cff" opacity="0.15"/>
+        <path d="M20 28h24M20 36h16" stroke="#4f7cff" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="44" cy="44" r="10" fill="#7c3aed" opacity="0.3"/>
+        <path d="M41 44h6M44 41v6" stroke="#7c3aed" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <p>חפש מורה או כיתה כדי לראות את המערכת</p>
+      <p class="hint">מציג שעות מהיום והלאה</p>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a>
+</footer>
+
+<script>
+let allLessons = [];
+let currentTab = 'teacher';
+let allTeachers = [];
+let allClasses = [];
+let suggestionsVisible = false;
+let highlightedIdx = -1;
+
+const TODAY = new Date();
+const TODAY_SORT = TODAY.getDate() * 100 + (TODAY.getMonth() + 1);
+
+fetch('schedule_data.json')
+  .then(r => r.json())
+  .then(data => {
+    allLessons = data;
+    const teacherSet = new Set();
+    const classSet = new Set();
+    data.forEach(l => {
+      if (l.teacher) teacherSet.add(l.teacher);
+      if (l.class) classSet.add(l.class);
+    });
+    allTeachers = [...teacherSet].sort();
+    allClasses = [...classSet].sort((a, b) => {
+      const getGrade = s => {
+        if (s.startsWith('יב')) return [4, parseInt(s.slice(2)) || 0];
+        if (s.startsWith('יא')) return [3, parseInt(s.slice(2)) || 0];
+        if (s.startsWith('י')) return [2, parseInt(s.slice(1)) || 0];
+        if (s.startsWith('ט')) return [1, parseInt(s.slice(1)) || 0];
+        return [5, 0];
+      };
+      const [ga, na] = getGrade(a);
+      const [gb, nb] = getGrade(b);
+      return ga !== gb ? ga - gb : na - nb;
+    });
+    renderQuickPicks();
+  });
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tab-teacher').classList.toggle('active', tab === 'teacher');
+  document.getElementById('tab-class').classList.toggle('active', tab === 'class');
+  const input = document.getElementById('search-input');
+  input.value = '';
+  hideSuggestions();
+  if (tab === 'teacher') {
+    document.getElementById('search-label').textContent = 'שם המורה:';
+    input.placeholder = 'חפש שם מורה...';
+    document.getElementById('quick-label').textContent = 'מורים לדוגמה:';
+  } else {
+    document.getElementById('search-label').textContent = 'כיתה:';
+    input.placeholder = 'חפש כיתה (למשל יא4)...';
+    document.getElementById('quick-label').textContent = 'כיתות מהירות:';
+  }
+  renderQuickPicks();
+  document.getElementById('results-area').innerHTML = `
+    <div class="state-empty">
+      <svg width="60" height="60" viewBox="0 0 64 64" fill="none">
+        <rect x="8" y="8" width="48" height="48" rx="8" fill="#4f7cff" opacity="0.15"/>
+        <path d="M20 28h24M20 36h16" stroke="#4f7cff" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <p>חפש ${tab === 'teacher' ? 'מורה' : 'כיתה'} כדי לראות את המערכת</p>
+      <p class="hint">מציג שעות מהיום והלאה</p>
+    </div>`;
+}
+
+function renderQuickPicks() {
+  const container = document.getElementById('quick-picks');
+  const items = currentTab === 'class' ? allClasses : allTeachers.slice(0, 16);
+  container.innerHTML = items.map(item =>
+    `<button class="quick-pick" onclick="quickSearch('${esc(item)}')">${item}</button>`
+  ).join('');
+}
+
+function quickSearch(val) {
+  document.getElementById('search-input').value = val;
+  doSearch();
+}
+
+function onInput() {
+  const q = document.getElementById('search-input').value.trim();
+  if (!q) { hideSuggestions(); return; }
+  const list = currentTab === 'teacher' ? allTeachers : allClasses;
+  const matches = list.filter(t => t.includes(q)).slice(0, 8);
+  if (!matches.length) { hideSuggestions(); return; }
+  showSuggestions(matches, q);
+}
+
+function showSuggestions(items, q) {
+  const container = document.getElementById('suggestions');
+  container.innerHTML = items.map((item, i) => {
+    const hi = item.replace(q, `<span class="highlight">${q}</span>`);
+    return `<div class="suggestion-item" data-idx="${i}" onmousedown="selectSuggestion('${esc(item)}')">${hi}</div>`;
+  }).join('');
+  container.style.display = 'block';
+  suggestionsVisible = true;
+  highlightedIdx = -1;
+}
+
+function hideSuggestions() {
+  document.getElementById('suggestions').style.display = 'none';
+  suggestionsVisible = false;
+  highlightedIdx = -1;
+}
+
+function selectSuggestion(val) {
+  document.getElementById('search-input').value = val;
+  hideSuggestions();
+  doSearch();
+}
+
+function onKeyDown(e) {
+  if (!suggestionsVisible) { if (e.key === 'Enter') doSearch(); return; }
+  const items = document.querySelectorAll('.suggestion-item');
+  if (e.key === 'ArrowDown') { e.preventDefault(); highlightedIdx = Math.min(highlightedIdx + 1, items.length - 1); updateHighlight(items); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); highlightedIdx = Math.max(highlightedIdx - 1, -1); updateHighlight(items); }
+  else if (e.key === 'Enter') {
+    if (highlightedIdx >= 0 && items[highlightedIdx]) selectSuggestion(items[highlightedIdx].textContent);
+    else { hideSuggestions(); doSearch(); }
+  } else if (e.key === 'Escape') hideSuggestions();
+}
+
+function updateHighlight(items) {
+  items.forEach((el, i) => el.classList.toggle('highlighted', i === highlightedIdx));
+}
+
+document.addEventListener('click', e => {
+  if (!document.getElementById('search-input').contains(e.target) &&
+      !document.getElementById('suggestions').contains(e.target)) hideSuggestions();
+});
+
+function esc(s) { return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+function clean(s) { return (s || '').replace(/\s+/g, ' ').trim(); }
+
+/* ─────────────────────────────────────────
+   SEARCH & RENDER
+───────────────────────────────────────── */
+function doSearch() {
+  const q = document.getElementById('search-input').value.trim();
+  hideSuggestions();
+  if (!q) return;
+
+  let results;
+  if (currentTab === 'teacher') {
+    results = allLessons.filter(l => l.teacher.includes(q) && l.date_sort >= TODAY_SORT);
+  } else {
+    results = allLessons.filter(l => l.class === q && l.date_sort >= TODAY_SORT);
+  }
+
+  if (!results.length) {
+    document.getElementById('results-area').innerHTML = `
+      <div class="no-results">
+        <p style="font-size:1rem;font-weight:600;margin-bottom:6px;">לא נמצאו תוצאות עבור "${q}"</p>
+        <p style="color:var(--text-muted);font-size:0.87rem;">נסה חלק מהשם, למשל "כהן" או "יא"</p>
+      </div>`;
+    return;
+  }
+
+  // ── Group: date → time → cards ──
+  // Structure:
+  //   byDate[date] = { day, date_sort, byTime: { time: [lesson,...] } }
+  const byDate = {};
+  results.forEach(l => {
+    if (!byDate[l.date]) byDate[l.date] = { day: l.day, date_sort: l.date_sort, byTime: {} };
+    const bt = byDate[l.date].byTime;
+    if (!bt[l.time]) bt[l.time] = [];
+    bt[l.time].push(l);
+  });
+
+  const sortedDates = Object.keys(byDate).sort((a, b) => byDate[a].date_sort - byDate[b].date_sort);
+
+  // Count cards (one per time slot per date, but visually one card per merged group)
+  let totalSlots = 0;
+  sortedDates.forEach(d => totalSlots += Object.keys(byDate[d].byTime).length);
+
+  let html = `
+    <div class="results-header">
+      <span class="results-title">תוצאות עבור "${q}"</span>
+      <span class="results-count">${totalSlots} שיעורים ב-${sortedDates.length} ימים</span>
+    </div>`;
+
+  sortedDates.forEach(date => {
+    const group = byDate[date];
+    const sortedTimes = Object.keys(group.byTime).sort();
+
+    html += `
+      <div class="date-group">
+        <div class="date-header">
+          <span class="date-badge">${date}</span>
+          <span class="date-day">יום ${group.day}</span>
+        </div>
+        <div class="time-slots">`;
+
+    sortedTimes.forEach(time => {
+      const lessons = group.byTime[time];
+      html += `<div class="time-slot">
+        <div class="slot-time">
+          <span class="slot-time-label">${time}</span>
+        </div>
+        <div class="slot-cards">`;
+
+      if (currentTab === 'teacher') {
+        // TEACHER mode: one card per time-slot, chips = classes
+        // Group by subject so if same teacher teaches same subject to multiple classes → one card
+        const bySubject = {};
+        lessons.forEach(l => {
+          const subj = clean(l.subject);
+          if (!bySubject[subj]) bySubject[subj] = { classes: [], teachers: new Set() };
+          bySubject[subj].classes.push(clean(l.class));
+          bySubject[subj].teachers.add(clean(l.teacher));
+        });
+
+        const subjects = Object.keys(bySubject);
+
+        if (subjects.length === 1) {
+          // Single subject card
+          const subj = subjects[0];
+          const data = bySubject[subj];
+          html += `<div class="lesson-card">
+            <div class="card-subject">${subj}</div>
+            <div class="card-chips">
+              ${data.classes.map(c => `<span class="chip chip-class"><bdi>${c}</bdi></span>`).join('')}
+            </div>
+          </div>`;
+        } else {
+          // Multiple subjects — one card, each subject has its own chip row
+          html += `<div class="lesson-card">`;
+          subjects.forEach((subj, idx) => {
+            const data = bySubject[subj];
+            if (idx > 0) html += `<div class="subject-separator"></div>`;
+            html += `<div class="subject-row">
+                <span class="subject-name">${subj}</span>
+              </div>
+              <div class="card-chips">
+                ${data.classes.map(c => `<span class="chip chip-class"><bdi>${c}</bdi></span>`).join('')}
+              </div>`;
+          });
+          html += `</div>`;
+        }
+
+      } else {
+        // CLASS mode: one card per time-slot, group by subject → chips = teachers
+        const bySubject = {};
+        lessons.forEach(l => {
+          const subj = clean(l.subject);
+          if (!bySubject[subj]) bySubject[subj] = [];
+          const t = clean(l.teacher);
+          if (!bySubject[subj].includes(t)) bySubject[subj].push(t);
+        });
+
+        const subjects = Object.keys(bySubject);
+
+        if (subjects.length === 1) {
+          const subj = subjects[0];
+          const teachers = bySubject[subj];
+          html += `<div class="lesson-card">
+            <div class="card-subject">${subj}</div>
+            <div class="card-chips">
+              ${teachers.map(t => `<span class="chip chip-teacher"><bdi>${t}</bdi></span>`).join('')}
+            </div>
+          </div>`;
+        } else {
+          // Multiple subjects at the same time (e.g. בחירה) — one card, multiple subject rows
+          html += `<div class="lesson-card">`;
+          subjects.forEach((subj, idx) => {
+            const teachers = bySubject[subj];
+            if (idx > 0) html += `<div class="subject-separator"></div>`;
+            html += `<div class="subject-row">
+                <span class="subject-name">${subj}</span>
+              </div>
+              <div class="card-chips">
+                ${teachers.map(t => `<span class="chip chip-teacher"><bdi>${t}</bdi></span>`).join('')}
+              </div>`;
+          });
+          html += `</div>`;
+        }
+      }
+
+      html += `</div></div>`; // close slot-cards, time-slot
+    });
+
+    html += `</div></div>`; // close time-slots, date-group
+  });
+
+  document.getElementById('results-area').innerHTML = html;
+}
+</script>
+</body>
+</html>
