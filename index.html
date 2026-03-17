@@ -532,6 +532,8 @@ let allLessons = [];
 let currentTab = 'teacher';
 let allTeachers = [];
 let allClasses = [];
+let teacherAliasMap = new Map();
+let teacherDisplayByKey = new Map();
 let suggestionsVisible = false;
 let highlightedIdx = -1;
 
@@ -541,14 +543,43 @@ const TODAY_SORT = TODAY.getDate() * 100 + (TODAY.getMonth() + 1);
 fetch('schedule_data.json')
   .then(r => r.json())
   .then(data => {
-    allLessons = data;
-    const teacherSet = new Set();
+    allLessons = data.map(l => ({
+      ...l,
+      teacher: clean(l.teacher),
+      class: clean(l.class),
+      subject: clean(l.subject),
+      day: clean(l.day),
+      date: clean(l.date)
+    }));
+
+    const teacherCountsByKey = new Map();
     const classSet = new Set();
-    data.forEach(l => {
-      if (l.teacher) teacherSet.add(l.teacher);
+
+    allLessons.forEach(l => {
+      if (l.teacher) {
+        const key = normalizeTeacherKey(l.teacher);
+        teacherAliasMap.set(l.teacher, key);
+
+        if (!teacherCountsByKey.has(key)) {
+          teacherCountsByKey.set(key, new Map());
+        }
+        const variants = teacherCountsByKey.get(key);
+        variants.set(l.teacher, (variants.get(l.teacher) || 0) + 1);
+      }
+
       if (l.class) classSet.add(l.class);
     });
-    allTeachers = [...teacherSet].sort();
+
+    teacherCountsByKey.forEach((variants, key) => {
+      const bestVariant = [...variants.entries()]
+        .sort((a, b) => {
+          if (b[1] !== a[1]) return b[1] - a[1];
+          return a[0].localeCompare(b[0], 'he');
+        })[0][0];
+      teacherDisplayByKey.set(key, bestVariant);
+    });
+
+    allTeachers = [...teacherDisplayByKey.values()].sort((a, b) => a.localeCompare(b, 'he'));
     allClasses = [...classSet].sort((a, b) => {
       const getGrade = s => {
         if (s.startsWith('יב')) return [4, parseInt(s.slice(2)) || 0];
@@ -561,7 +592,16 @@ fetch('schedule_data.json')
       const [gb, nb] = getGrade(b);
       return ga !== gb ? ga - gb : na - nb;
     });
+
     renderQuickPicks();
+  })
+  .catch(err => {
+    console.error('Failed to load schedule_data.json:', err);
+    document.getElementById('results-area').innerHTML = `
+      <div class="no-results">
+        <p style="font-size:1rem;font-weight:600;margin-bottom:6px;">שגיאה בטעינת הנתונים</p>
+        <p style="color:var(--text-muted);font-size:0.87rem;">בדוק שקובץ schedule_data.json נמצא באותה תיקייה של index.html</p>
+      </div>`;
   });
 
 function switchTab(tab) {
@@ -606,10 +646,21 @@ function quickSearch(val) {
 }
 
 function onInput() {
-  const q = document.getElementById('search-input').value.trim();
+  const q = clean(document.getElementById('search-input').value);
   if (!q) { hideSuggestions(); return; }
-  const list = currentTab === 'teacher' ? allTeachers : allClasses;
-  const matches = list.filter(t => t.includes(q)).slice(0, 8);
+
+  let matches = [];
+  if (currentTab === 'teacher') {
+    const normalizedQ = normalizeTeacherKey(q);
+    matches = allTeachers.filter(name => {
+      const cleanName = clean(name);
+      const key = normalizeTeacherKey(cleanName);
+      return cleanName.includes(q) || key.includes(normalizedQ);
+    }).slice(0, 8);
+  } else {
+    matches = allClasses.filter(t => t.includes(q)).slice(0, 8);
+  }
+
   if (!matches.length) { hideSuggestions(); return; }
   showSuggestions(matches, q);
 }
@@ -617,7 +668,7 @@ function onInput() {
 function showSuggestions(items, q) {
   const container = document.getElementById('suggestions');
   container.innerHTML = items.map((item, i) => {
-    const hi = item.replace(q, `<span class="highlight">${q}</span>`);
+    const hi = highlightMatch(item, q);
     return `<div class="suggestion-item" data-idx="${i}" onmousedown="selectSuggestion('${esc(item)}')">${hi}</div>`;
   }).join('');
   container.style.display = 'block';
@@ -657,20 +708,43 @@ document.addEventListener('click', e => {
       !document.getElementById('suggestions').contains(e.target)) hideSuggestions();
 });
 
-function esc(s) { return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
-function clean(s) { return (s || '').replace(/\s+/g, ' ').trim(); }
+function esc(s) { return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+function clean(s) { return String(s || '').replace(/\s+/g, ' ').trim(); }
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+function normalizeTeacherKey(name) {
+  return clean(name)
+    .split(' ')
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, 'he'))
+    .join(' ');
+}
+function highlightMatch(item, q) {
+  const safeItem = escapeHtml(item);
+  const safeQ = escapeHtml(q);
+  return q && item.includes(q)
+    ? safeItem.replace(safeQ, `<span class="highlight">${safeQ}</span>`)
+    : safeItem;
+}
 
-/* ─────────────────────────────────────────
+/* ────────────────────────────────────────
    SEARCH & RENDER
-───────────────────────────────────────── */
+──────────────────────────────────────── */
 function doSearch() {
-  const q = document.getElementById('search-input').value.trim();
+  const q = clean(document.getElementById('search-input').value);
   hideSuggestions();
   if (!q) return;
 
   let results;
   if (currentTab === 'teacher') {
-    results = allLessons.filter(l => l.teacher.includes(q) && l.date_sort >= TODAY_SORT);
+    const normalizedQuery = normalizeTeacherKey(q);
+    results = allLessons.filter(l => normalizeTeacherKey(l.teacher) === normalizedQuery && l.date_sort >= TODAY_SORT);
   } else {
     results = allLessons.filter(l => l.class === q && l.date_sort >= TODAY_SORT);
   }
@@ -678,15 +752,12 @@ function doSearch() {
   if (!results.length) {
     document.getElementById('results-area').innerHTML = `
       <div class="no-results">
-        <p style="font-size:1rem;font-weight:600;margin-bottom:6px;">לא נמצאו תוצאות עבור "${q}"</p>
-        <p style="color:var(--text-muted);font-size:0.87rem;">נסה חלק מהשם, למשל "כהן" או "יא"</p>
+        <p style="font-size:1rem;font-weight:600;margin-bottom:6px;">לא נמצאו תוצאות עבור "${escapeHtml(q)}"</p>
+        <p style="color:var(--text-muted);font-size:0.87rem;">נסה לבחור מהרשימה או לכתוב שם/כיתה בצורה חלקית</p>
       </div>`;
     return;
   }
 
-  // ── Group: date → time → cards ──
-  // Structure:
-  //   byDate[date] = { day, date_sort, byTime: { time: [lesson,...] } }
   const byDate = {};
   results.forEach(l => {
     if (!byDate[l.date]) byDate[l.date] = { day: l.day, date_sort: l.date_sort, byTime: {} };
@@ -697,13 +768,16 @@ function doSearch() {
 
   const sortedDates = Object.keys(byDate).sort((a, b) => byDate[a].date_sort - byDate[b].date_sort);
 
-  // Count cards (one per time slot per date, but visually one card per merged group)
   let totalSlots = 0;
   sortedDates.forEach(d => totalSlots += Object.keys(byDate[d].byTime).length);
 
+  const displayTitle = currentTab === 'teacher'
+    ? (teacherDisplayByKey.get(normalizeTeacherKey(q)) || q)
+    : q;
+
   let html = `
     <div class="results-header">
-      <span class="results-title">תוצאות עבור "${q}"</span>
+      <span class="results-title">תוצאות עבור "${escapeHtml(displayTitle)}"</span>
       <span class="results-count">${totalSlots} שיעורים ב-${sortedDates.length} ימים</span>
     </div>`;
 
@@ -714,8 +788,8 @@ function doSearch() {
     html += `
       <div class="date-group">
         <div class="date-header">
-          <span class="date-badge">${date}</span>
-          <span class="date-day">יום ${group.day}</span>
+          <span class="date-badge">${escapeHtml(date)}</span>
+          <span class="date-day">יום ${escapeHtml(group.day)}</span>
         </div>
         <div class="time-slots">`;
 
@@ -723,57 +797,53 @@ function doSearch() {
       const lessons = group.byTime[time];
       html += `<div class="time-slot">
         <div class="slot-time">
-          <span class="slot-time-label">${time}</span>
+          <span class="slot-time-label">${escapeHtml(time)}</span>
         </div>
         <div class="slot-cards">`;
 
       if (currentTab === 'teacher') {
-        // TEACHER mode: one card per time-slot, chips = classes
-        // Group by subject so if same teacher teaches same subject to multiple classes → one card
         const bySubject = {};
         lessons.forEach(l => {
           const subj = clean(l.subject);
-          if (!bySubject[subj]) bySubject[subj] = { classes: [], teachers: new Set() };
-          bySubject[subj].classes.push(clean(l.class));
-          bySubject[subj].teachers.add(clean(l.teacher));
+          if (!bySubject[subj]) bySubject[subj] = { classes: [], classSet: new Set() };
+          const cls = clean(l.class);
+          if (!bySubject[subj].classSet.has(cls)) {
+            bySubject[subj].classSet.add(cls);
+            bySubject[subj].classes.push(cls);
+          }
         });
 
         const subjects = Object.keys(bySubject);
 
         if (subjects.length === 1) {
-          // Single subject card
           const subj = subjects[0];
           const data = bySubject[subj];
           html += `<div class="lesson-card">
-            <div class="card-subject">${subj}</div>
+            <div class="card-subject">${escapeHtml(subj)}</div>
             <div class="card-chips">
-              ${data.classes.map(c => `<span class="chip chip-class"><bdi>${c}</bdi></span>`).join('')}
+              ${data.classes.map(c => `<span class="chip chip-class"><bdi>${escapeHtml(c)}</bdi></span>`).join('')}
             </div>
           </div>`;
         } else {
-          // Multiple subjects — one card, each subject has its own chip row
           html += `<div class="lesson-card">`;
           subjects.forEach((subj, idx) => {
             const data = bySubject[subj];
             if (idx > 0) html += `<div class="subject-separator"></div>`;
-            html += `<div class="subject-row">
-                <span class="subject-name">${subj}</span>
-              </div>
+            html += `<div class="subject-row"><span class="subject-name">${escapeHtml(subj)}</span></div>
               <div class="card-chips">
-                ${data.classes.map(c => `<span class="chip chip-class"><bdi>${c}</bdi></span>`).join('')}
+                ${data.classes.map(c => `<span class="chip chip-class"><bdi>${escapeHtml(c)}</bdi></span>`).join('')}
               </div>`;
           });
           html += `</div>`;
         }
-
       } else {
-        // CLASS mode: one card per time-slot, group by subject → chips = teachers
         const bySubject = {};
         lessons.forEach(l => {
           const subj = clean(l.subject);
           if (!bySubject[subj]) bySubject[subj] = [];
-          const t = clean(l.teacher);
-          if (!bySubject[subj].includes(t)) bySubject[subj].push(t);
+          const normalizedTeacher = normalizeTeacherKey(l.teacher);
+          const teacherLabel = teacherDisplayByKey.get(normalizedTeacher) || clean(l.teacher);
+          if (!bySubject[subj].includes(teacherLabel)) bySubject[subj].push(teacherLabel);
         });
 
         const subjects = Object.keys(bySubject);
@@ -782,32 +852,29 @@ function doSearch() {
           const subj = subjects[0];
           const teachers = bySubject[subj];
           html += `<div class="lesson-card">
-            <div class="card-subject">${subj}</div>
+            <div class="card-subject">${escapeHtml(subj)}</div>
             <div class="card-chips">
-              ${teachers.map(t => `<span class="chip chip-teacher"><bdi>${t}</bdi></span>`).join('')}
+              ${teachers.map(t => `<span class="chip chip-teacher"><bdi>${escapeHtml(t)}</bdi></span>`).join('')}
             </div>
           </div>`;
         } else {
-          // Multiple subjects at the same time (e.g. בחירה) — one card, multiple subject rows
           html += `<div class="lesson-card">`;
           subjects.forEach((subj, idx) => {
             const teachers = bySubject[subj];
             if (idx > 0) html += `<div class="subject-separator"></div>`;
-            html += `<div class="subject-row">
-                <span class="subject-name">${subj}</span>
-              </div>
+            html += `<div class="subject-row"><span class="subject-name">${escapeHtml(subj)}</span></div>
               <div class="card-chips">
-                ${teachers.map(t => `<span class="chip chip-teacher"><bdi>${t}</bdi></span>`).join('')}
+                ${teachers.map(t => `<span class="chip chip-teacher"><bdi>${escapeHtml(t)}</bdi></span>`).join('')}
               </div>`;
           });
           html += `</div>`;
         }
       }
 
-      html += `</div></div>`; // close slot-cards, time-slot
+      html += `</div></div>`;
     });
 
-    html += `</div></div>`; // close time-slots, date-group
+    html += `</div></div>`;
   });
 
   document.getElementById('results-area').innerHTML = html;
