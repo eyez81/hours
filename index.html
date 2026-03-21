@@ -19,7 +19,7 @@
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>מערכת שעות בית הספר</title>
+<title>מערכת שעות מורים</title>
 <style>
   :root {
     --bg: #f6f8fc;
@@ -376,6 +376,23 @@
     border: 1px solid #cbeed8;
   }
 
+
+  .chip-mode-remote {
+    background: #eef6ff;
+    color: #2563eb;
+    border: 1px solid #cfe2ff;
+  }
+  .chip-mode-school {
+    background: #ecfdf3;
+    color: #15803d;
+    border: 1px solid #ccefd8;
+  }
+  .chip-room {
+    background: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #fed7aa;
+  }
+
   /* multi-subject separator */
   .subject-separator {
     height: 1px;
@@ -470,8 +487,8 @@
     <line x1="31" y1="30" x2="33.5" y2="31.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
   </svg>
   <div class="header-text">
-    <h1>מערכת שעות בית הספר</h1>
-    <p>חיפוש לפי מורה או כיתה</p>
+    <h1>מערכת שעות מורים</h1>
+    <p>חיפוש לפי מורה או קבוצת תלמידים</p>
   </div>
 </header>
 
@@ -518,14 +535,14 @@
         <circle cx="44" cy="44" r="10" fill="#7c3aed" opacity="0.15"/>
         <path d="M41 44h6M44 41v6" stroke="#7c3aed" stroke-width="2" stroke-linecap="round"/>
       </svg>
-      <p>חפש מורה או כיתה כדי לראות את המערכת</p>
+      <p>חפש מורה או כיתה כדי לראות את המערכת המעודכנת</p>
       <p class="hint">מציג שעות מהיום והלאה</p>
     </div>
   </div>
 </main>
 
 <footer>
-  מערכת שעות
+  מערכת שעות מעודכנת
 </footer>
 
 <script>
@@ -541,7 +558,7 @@ let highlightedIdx = -1;
 const TODAY = new Date();
 const TODAY_SORT = TODAY.getDate() * 100 + (TODAY.getMonth() + 1);
 
-fetch('schedule_data.json')
+fetch('schedule_data_final.json')
   .then(r => r.json())
   .then(data => {
     allLessons = data.map(l => ({
@@ -550,7 +567,10 @@ fetch('schedule_data.json')
       class: clean(l.class),
       subject: clean(l.subject),
       day: clean(l.day),
-      date: clean(l.date)
+      date: clean(l.date),
+      mode: clean(l.mode || ''),
+      room: clean(l.room || ''),
+      source: clean(l.source || '')
     }));
 
     const teacherCountsByKey = new Map();
@@ -597,11 +617,11 @@ fetch('schedule_data.json')
     renderQuickPicks();
   })
   .catch(err => {
-    console.error('Failed to load schedule_data.json:', err);
+    console.error('Failed to load schedule data:', err);
     document.getElementById('results-area').innerHTML = `
       <div class="no-results">
         <p style="font-size:1rem;font-weight:600;margin-bottom:6px;">שגיאה בטעינת הנתונים</p>
-        <p style="color:var(--text-muted);font-size:0.87rem;">בדוק שקובץ schedule_data.json נמצא באותה תיקייה של index.html</p>
+        <p style="color:var(--text-muted);font-size:0.87rem;">בדוק שקובץ schedule_data_final.json נמצא באותה תיקייה של index.html</p>
       </div>`;
   });
 
@@ -616,9 +636,9 @@ function switchTab(tab) {
     document.getElementById('search-label').textContent = 'שם המורה:';
     input.placeholder = 'חפש שם מורה...';
   } else {
-    document.getElementById('search-label').textContent = 'כיתה:';
-    input.placeholder = 'חפש כיתה (למשל יא4)...';
-    document.getElementById('quick-label').textContent = 'כיתות מהירות:';
+    document.getElementById('search-label').textContent = 'כיתה / קבוצה:';
+    input.placeholder = 'חפש כיתה או קבוצה (למשל יא4)...';
+    document.getElementById('quick-label').textContent = 'כיתות / קבוצות מהירות:';
   }
   renderQuickPicks();
   document.getElementById('results-area').innerHTML = `
@@ -627,8 +647,8 @@ function switchTab(tab) {
         <rect x="8" y="8" width="48" height="48" rx="8" fill="#4f7cff" opacity="0.10"/>
         <path d="M20 28h24M20 36h16" stroke="#4f7cff" stroke-width="2.5" stroke-linecap="round"/>
       </svg>
-      <p>חפש ${tab === 'teacher' ? 'מורה' : 'כיתה'} כדי לראות את המערכת</p>
-      <p class="hint">מציג שעות מהיום והלאה</p>
+      <p>חפש ${tab === 'teacher' ? 'מורה' : 'כיתה'} כדי לראות את המערכת המעודכנת</p>
+      <p class="hint">כולל הבחנה בין למידה מרחוק ללמידה בבית הספר</p>
     </div>`;
 }
 
@@ -717,7 +737,7 @@ document.addEventListener('click', e => {
       !document.getElementById('suggestions').contains(e.target)) hideSuggestions();
 });
 
-function esc(s) { return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+function esc(s) { return String(s).replace(/\/g, '\\').replace(/'/g, "\'"); }
 function clean(s) { return String(s || '').replace(/\s+/g, ' ').trim(); }
 function escapeHtml(s) {
   return String(s)
@@ -742,9 +762,11 @@ function highlightMatch(item, q) {
     : safeItem;
 }
 
-/* ────────────────────────────────────────
-   SEARCH & RENDER
-──────────────────────────────────────── */
+function modeChip(mode) {
+  if (mode === 'בית הספר') return `<span class="chip chip-mode-school">🏫 בית הספר</span>`;
+  return `<span class="chip chip-mode-remote">💻 מרחוק</span>`;
+}
+
 function doSearch() {
   const q = clean(document.getElementById('search-input').value);
   hideSuggestions();
@@ -787,7 +809,7 @@ function doSearch() {
   let html = `
     <div class="results-header">
       <span class="results-title ${currentTab === 'class' ? 'results-title-class' : ''}">תוצאות עבור "${escapeHtml(displayTitle)}"</span>
-      <span class="results-count">${totalSlots} שיעורים ב-${sortedDates.length} ימים</span>
+      <span class="results-count">${totalSlots} משבצות ב-${sortedDates.length} ימים</span>
     </div>`;
 
   sortedDates.forEach(date => {
@@ -811,40 +833,29 @@ function doSearch() {
         <div class="slot-cards">`;
 
       if (currentTab === 'teacher') {
-        const bySubject = {};
+        const bySubjectMode = {};
         lessons.forEach(l => {
-          const subj = clean(l.subject);
-          if (!bySubject[subj]) bySubject[subj] = { classes: [], classSet: new Set() };
+          const key = `${clean(l.subject)}|||${clean(l.mode)}|||${clean(l.room)}`;
+          if (!bySubjectMode[key]) bySubjectMode[key] = { subject: clean(l.subject), mode: clean(l.mode), room: clean(l.room), classes: [], classSet: new Set() };
           const cls = clean(l.class);
-          if (!bySubject[subj].classSet.has(cls)) {
-            bySubject[subj].classSet.add(cls);
-            bySubject[subj].classes.push(cls);
+          if (!bySubjectMode[key].classSet.has(cls)) {
+            bySubjectMode[key].classSet.add(cls);
+            bySubjectMode[key].classes.push(cls);
           }
         });
 
-        const subjects = Object.keys(bySubject);
-
-        if (subjects.length === 1) {
-          const subj = subjects[0];
-          const data = bySubject[subj];
-          html += `<div class="lesson-card">
-            <div class="card-subject">${escapeHtml(subj)}</div>
+        const entries = Object.values(bySubjectMode);
+        html += `<div class="lesson-card">`;
+        entries.forEach((entry, idx) => {
+          if (idx > 0) html += `<div class="subject-separator"></div>`;
+          html += `<div class="subject-row"><span class="subject-name">${escapeHtml(entry.subject)}</span></div>
             <div class="card-chips">
-              ${data.classes.map(c => `<span class="chip chip-class"><bdi>${escapeHtml(c)}</bdi></span>`).join('')}
-            </div>
-          </div>`;
-        } else {
-          html += `<div class="lesson-card">`;
-          subjects.forEach((subj, idx) => {
-            const data = bySubject[subj];
-            if (idx > 0) html += `<div class="subject-separator"></div>`;
-            html += `<div class="subject-row"><span class="subject-name">${escapeHtml(subj)}</span></div>
-              <div class="card-chips">
-                ${data.classes.map(c => `<span class="chip chip-class"><bdi>${escapeHtml(c)}</bdi></span>`).join('')}
-              </div>`;
-          });
-          html += `</div>`;
-        }
+              ${modeChip(entry.mode)}
+              ${entry.classes.map(c => `<span class="chip chip-class"><bdi>${escapeHtml(c)}</bdi></span>`).join('')}
+              ${entry.room ? `<span class="chip chip-room">📍 ${escapeHtml(entry.room)}</span>` : ''}
+            </div>`;
+        });
+        html += `</div>`;
       } else {
         const bySubject = {};
         lessons.forEach(l => {
@@ -852,32 +863,23 @@ function doSearch() {
           if (!bySubject[subj]) bySubject[subj] = [];
           const normalizedTeacher = normalizeTeacherKey(l.teacher);
           const teacherLabel = teacherDisplayByKey.get(normalizedTeacher) || clean(l.teacher);
-          if (!bySubject[subj].includes(teacherLabel)) bySubject[subj].push(teacherLabel);
+          const signature = `${teacherLabel}|||${clean(l.mode)}|||${clean(l.room)}`;
+          if (!bySubject[subj].some(x => x.signature === signature)) {
+            bySubject[subj].push({ signature, teacherLabel, mode: clean(l.mode), room: clean(l.room) });
+          }
         });
 
         const subjects = Object.keys(bySubject);
-
-        if (subjects.length === 1) {
-          const subj = subjects[0];
-          const teachers = bySubject[subj];
-          html += `<div class="lesson-card">
-            <div class="card-subject">${escapeHtml(subj)}</div>
-            <div class="card-chips">
-              ${teachers.map(t => `<span class="chip chip-teacher"><bdi>${escapeHtml(t)}</bdi></span>`).join('')}
-            </div>
-          </div>`;
-        } else {
-          html += `<div class="lesson-card">`;
-          subjects.forEach((subj, idx) => {
-            const teachers = bySubject[subj];
-            if (idx > 0) html += `<div class="subject-separator"></div>`;
-            html += `<div class="subject-row"><span class="subject-name">${escapeHtml(subj)}</span></div>
-              <div class="card-chips">
-                ${teachers.map(t => `<span class="chip chip-teacher"><bdi>${escapeHtml(t)}</bdi></span>`).join('')}
-              </div>`;
+        html += `<div class="lesson-card">`;
+        subjects.forEach((subj, idx) => {
+          if (idx > 0) html += `<div class="subject-separator"></div>`;
+          html += `<div class="subject-row"><span class="subject-name">${escapeHtml(subj)}</span></div><div class="card-chips">`;
+          bySubject[subj].forEach(item => {
+            html += `<span class="chip chip-teacher"><bdi>${escapeHtml(item.teacherLabel)}</bdi></span>${modeChip(item.mode)}${item.room ? `<span class="chip chip-room">📍 ${escapeHtml(item.room)}</span>` : ''}`;
           });
           html += `</div>`;
-        }
+        });
+        html += `</div>`;
       }
 
       html += `</div></div>`;
