@@ -635,6 +635,7 @@ function switchTab(tab) {
   if (tab === 'teacher') {
     document.getElementById('search-label').textContent = 'שם המורה:';
     input.placeholder = 'חפש שם מורה...';
+    document.getElementById('quick-label').textContent = 'גישה מהירה:';
   } else {
     document.getElementById('search-label').textContent = 'כיתה / קבוצה:';
     input.placeholder = 'חפש כיתה או קבוצה (למשל יא4)...';
@@ -737,7 +738,7 @@ document.addEventListener('click', e => {
       !document.getElementById('suggestions').contains(e.target)) hideSuggestions();
 });
 
-function esc(s) { return String(s).replace(/\/g, '\\').replace(/'/g, "\'"); }
+function esc(s) { return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\'"); }
 function clean(s) { return String(s || '').replace(/\s+/g, ' ').trim(); }
 function escapeHtml(s) {
   return String(s)
